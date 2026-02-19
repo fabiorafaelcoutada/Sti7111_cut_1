@@ -1,4 +1,4 @@
-#!/usr/bin/env python3
+#!/usr/bin/env python2
 ####################################################
 #                                                  #
 #            Nagra 3  Extrator de dados            #
@@ -11,6 +11,7 @@ import sys
 import binascii
 import textwrap
 import os
+from os import path
 from os import walk
 #from os import listdir
 import time
@@ -29,7 +30,7 @@ mypath = path
 f = []
 for (dirpath, dirnames, filenames) in walk(mypath):
 	f.extend(filenames)
-	f = "\n".join(f[:])
+	f = "\n".join(f)
 	print f
 	break
 
@@ -46,7 +47,7 @@ try:
 	with open(filename, 'rb') as f:
 		f.seek(0x0, 0)  # 0E0000 if you use extracted block as .bin file change address to 0x0
 		data = f.read()
-except:
+except Exception:
 	print "Error reading file:", filename
 	sys.exit(2)
 
