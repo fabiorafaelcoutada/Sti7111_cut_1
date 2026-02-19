@@ -37,11 +37,6 @@ for (dirpath, dirnames, filenames) in walk(mypath):
 print "\nPath to files:\n", path
 filename0 = str(raw_input('\nInput binary(XXX.bin) file from the list above: ')).encode('hex').decode('hex')
 filename = path + filename0
-with open(filename, 'rb') as f:
-	content = f.read()
-
-######### if you want to print the input data: uncomment the line bellow  ###########
-# print(binascii.hexlify(content)).decode('hex').encode('hex').upper()
 
 try:
 	with open(filename, 'rb') as f:
