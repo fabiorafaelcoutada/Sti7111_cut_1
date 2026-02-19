@@ -1,4 +1,4 @@
-#!/usr/bin/env python3
+#!/usr/bin/env python2
 ####################################################
 #                                                  #
 #            Nagra 3  Extrator de dados            #
@@ -11,263 +11,508 @@ import sys
 import binascii
 import textwrap
 import os
+from os import path
+from os import walk
+#from os import listdir
 import time
 
-def extract_all_data(data):
-    """Extracts all data fields from the binary data buffer."""
-    if len(data) < 2284:
-        raise IndexError("Insufficient data buffer")
-    results = {}
+PATH = binascii.hexlify(raw_input("Input DIRECTORY here: ")).decode('hex')
 
-    # Basic info
-    results['DESCRIPTOR'] = binascii.hexlify(data[0:4]).decode('ascii').upper()
-    results['NUID'] = binascii.hexlify(data[4:8]).decode('ascii').upper()
-    results['NPROVIDER'] = binascii.hexlify(data[8:10]).decode('ascii').upper()
-    results['PROVIDERID'] = binascii.hexlify(data[10:12]).decode('ascii').upper()
-    results['ARCH'] = binascii.hexlify(data[12:14]).decode('ascii').upper()
-    results['CWKEYDESC'] = binascii.hexlify(data[14:15]).decode('ascii').upper()
-    results['Hextable'] = binascii.hexlify(data[18:19]).decode('ascii').upper()
-    results['TLENGHT'] = binascii.hexlify(data[17:18]).decode('ascii').upper()
+# define how date time will be presented
+date = time.strftime("%d.%m.%Y-%H.%M")
+print (date)
 
-    results['BLOCK'] = binascii.hexlify(data[19:153]).decode('ascii').upper()
+# define path to the file you want to convert and shows the content of the directory so you can choose your files to process.
+path = os.path.join(os.path.expanduser(PATH + "/"))  # , 'test.dat')
+mypath = path
 
-    # eCK Keys
-    results['eCK0'] = binascii.hexlify(data[19:35]).decode('ascii').upper()
-    results['eCK1'] = binascii.hexlify(data[35:51]).decode('ascii').upper()
-    results['eCK2'] = binascii.hexlify(data[51:67]).decode('ascii').upper()
-    results['eCK3'] = binascii.hexlify(data[67:83]).decode('ascii').upper()
-    results['eCK4'] = binascii.hexlify(data[83:99]).decode('ascii').upper()
-    results['eCK5'] = binascii.hexlify(data[99:115]).decode('ascii').upper()
-    results['eCK6'] = binascii.hexlify(data[115:131]).decode('ascii').upper()
-    results['eCK7'] = binascii.hexlify(data[131:147]).decode('ascii').upper()
+# print the dir content
+f = []
+for (dirpath, dirnames, filenames) in walk(mypath):
+	f.extend(filenames)
+	f = "\n".join(f)
+	print f
+	break
 
-    # BLOCK 0583
-    results['block0583'] = binascii.hexlify(data[147:149]).decode('ascii').upper()
-    results['subkey8A0010'] = binascii.hexlify(data[149:153]).decode('ascii').upper()
-    results['subkey8A_256'] = binascii.hexlify(data[152:280]).decode('ascii').upper()
+print "\nPath to files:\n", path
+filename0 = str(raw_input('\nInput binary(XXX.bin) file from the list above: ')).encode('hex').decode('hex')
+filename = path + filename0
+with open(filename, 'rb') as f:
+	content = f.read()
 
-    # Blocks 9A/8A etc.
-    def extract_block_9A_8A(offset):
-        block = binascii.hexlify(data[offset:(offset + 2)]).decode('ascii').upper()
-        subkey_header = binascii.hexlify(data[(offset + 2):(offset + 5)]).decode('ascii').upper()
-        subkey_data = binascii.hexlify(data[(offset + 5):(offset + 5 + 132)]).decode('ascii').upper()
-        return block, subkey_header, subkey_data
+######### if you want to print the input data: uncomment the line bellow  ###########
+# print(binascii.hexlify(content)).decode('hex').encode('hex').upper()
 
-    results['B0583_1'], results['S9A1020'], results['S8A0100_1'] = extract_block_9A_8A(280)
-    results['B0583_2'], results['S901020'], results['SD00100_1'] = extract_block_9A_8A(413)
-    results['B0583_3'], results['S991020'], results['S990100_1'] = extract_block_9A_8A(546)
-    results['B0583_4'], results['S981020'], results['S880100_1'] = extract_block_9A_8A(679)
-    results['B0583_5'], results['SAA2020'], results['S8A0200_1'] = extract_block_9A_8A(812)
-    results['B0583_6'], results['SA02020'], results['SD0200_1'] = extract_block_9A_8A(945)
-    results['BB0583_7'], results['SA92020'], results['S990200_1'] = extract_block_9A_8A(1078)
-    results['BB0583_8'], results['SA82020'], results['S880200_1'] = extract_block_9A_8A(1211)
+try:
+	with open(filename, 'rb') as f:
+		f.seek(0x0, 0)  # 0E0000 if you use extracted block as .bin file change address to 0x0
+		data = f.read()
+except Exception:
+	print "Error reading file:", filename
+	sys.exit(2)
 
-    # BLOCK 01
-    BB0323 = 1344
-    results['block0323'] = binascii.hexlify(data[BB0323:(BB0323 + 2)]).decode('ascii').upper()
-    results['subkey010E10'] = binascii.hexlify(data[(BB0323 + 2):(BB0323 + 5)]).decode('ascii').upper()
-    results['subkey010E'] = binascii.hexlify(data[(BB0323 + 5):(BB0323 + 5 + 32)]).decode('ascii').upper()
+DESCRIPTOR = str(binascii.hexlify(data[0:4])).upper()
+NUID = str(binascii.hexlify(data[4:8])).upper()
+NPROVIDER = str(binascii.hexlify(data[8:10])).upper()
+PROVIDERID = str(binascii.hexlify(data[10:12])).upper()
+ARCH = str(binascii.hexlify(data[12:14])).upper()
+CWKEYDESC = str(binascii.hexlify(data[14:15])).upper()
+Hextable = str(binascii.hexlify(data[18:19])).upper()
+TLENGHT = str(binascii.hexlify(data[17:18])).upper()
 
-    # BLOCK 81
-    BB0622 = 1381
-    results['block0622'] = binascii.hexlify(data[BB0622:(BB0622 + 2)]).decode('ascii').upper()
-    results['subkey811000'] = binascii.hexlify(data[(BB0622 + 2):(BB0622 + 4)]).decode('ascii').upper()
-    results['subkey8110'] = binascii.hexlify(data[(BB0622 + 4):(BB0622 + 4 + 32)]).decode('ascii').upper()
+BLOCK = str(binascii.hexlify(data[19:153]))
 
-    # BLOCK 00
-    BB0436 = 1417
-    results['block0436'] = binascii.hexlify(data[BB0436:(BB0436 + 2)]).decode('ascii').upper()
-    results['subkey000010'] = binascii.hexlify(data[(BB0436 + 2):(BB0436 + 5)]).decode('ascii').upper()
-    results['subkeyXX0000'] = binascii.hexlify(data[(BB0436 + 5):(BB0436 + 5 + 51)]).decode('ascii').upper()
+eCK0 = str(binascii.hexlify(data[19:35])).upper()
+eCK1 = str(binascii.hexlify(data[35:51])).upper()
+eCK2 = str(binascii.hexlify(data[51:67])).upper()
+eCK3 = str(binascii.hexlify(data[67:83])).upper()
+eCK4 = str(binascii.hexlify(data[83:99])).upper()
+eCK5 = str(binascii.hexlify(data[99:115])).upper()
+eCK6 = str(binascii.hexlify(data[115:131])).upper()
+eCK7 = str(binascii.hexlify(data[131:147])).upper()
+print 
+print 'CSCKeyDescriptor: ', DESCRIPTOR, "(LEN of CWPK block)"
+print 'NUID: ', NUID
+print 'Max Number of Provider IDs: ',NPROVIDER
+print 'Provider ID: ', PROVIDERID, "; SysID ", format(int(PROVIDERID, 16))
+print 'Security Architecture: ', ARCH
+print 'CW Key descriptor: ', CWKEYDESC
+print 'Hex bytes: ', Hextable
+print 'Storage table length: 0x%0s'% TLENGHT
 
-    # BLOCK 8A
-    BB0746 = 1473
-    results['block0746'] = binascii.hexlify(data[BB0746:(BB0746 + 2)]).decode('ascii').upper()
-    results['subkey8A10_1'] = binascii.hexlify(data[(BB0746 + 2):(BB0746 + 4)]).decode('ascii').upper()
-    results['subkeyXX8A10'] = binascii.hexlify(data[(BB0746 + 4):(BB0746 + 4 + 68)]).decode('ascii').upper()
+print 'eCK0:', eCK0
+print 'eCK1:', eCK1
+print 'eCK2:', eCK2
+print 'eCK3:', eCK3
+print 'eCK4:', eCK4
+print 'eCK5:', eCK5
+print 'eCK6:', eCK6
+print 'eCK7:', eCK7
 
-    # BLOCK 8A (again? BB0724)
-    BB0724 = 1545
-    results['block0724'] = binascii.hexlify(data[BB0724:(BB0724 + 2)]).decode('ascii').upper()
-    results['subkey8010'] = binascii.hexlify(data[(BB0724 + 2):(BB0724 + 4)]).decode('ascii').upper()
-    results['subkeyXX8010'] = binascii.hexlify(data[(BB0724 + 4):(BB0724 + 4 + 68)]).decode('ascii').upper()
+print
+print "|||||||||||||||||||||||||||||||||||||"
+print "|| New datakeys protection level  || "
+print "|||||||||||||||||||||||||||||||||||||"
+print
 
-    # Blocks 0744
-    def extract_block_0744(offset, size=68):
-        block = binascii.hexlify(data[offset:(offset + 2)]).decode('ascii').upper()
-        subkey_header = binascii.hexlify(data[(offset + 2):(offset + 4)]).decode('ascii').upper()
-        subkey_data = binascii.hexlify(data[(offset + 4):(offset + 4 + size)]).decode('ascii').upper()
-        return block, subkey_header, subkey_data
+############################
+separator = "\n"
+tab = "    "
+block0583_1 = 140
+block0583 = str(binascii.hexlify(data[147:149])).upper()
+subkey8A0010 = str(binascii.hexlify(data[149:153])).upper()
+subkey8A_256 = (binascii.hexlify(data[152:280])).upper()
+subkey8A_256a = textwrap.wrap(subkey8A_256, 32)
+print block0583
+print subkey8A0010[:4], subkey8A0010[4:6], "-----BLOCK 8A -1024-???? "
+print separator.join(subkey8A_256a), separator
+#print "NEXT counter = ", (block0583_1 + 5) + 135
 
-    results['B0744_0'], results['S9A20'], results['S8A0100_2'] = extract_block_0744(1583, 132)
-    results['B0744_1'], results['S9020'], results['SD00100_2'] = extract_block_0744(1653, 68)
-    results['B0744_2'], results['S9920'], results['S990100_2'] = extract_block_0744(1723, 68)
-    results['B0744_3'], results['S9820'], results['S8801300'] = extract_block_0744(1793, 68)
-    results['B0744_4'], results['SBA20'], results['S8A0300'] = extract_block_0744(1863, 132)
-    results['B0744_5'], results['SB920'], results['S9903300'] = extract_block_0744(1933, 132)
-    results['B0744_6'], results['SB820_1'], results['S980300'] = extract_block_0744(2003, 132)
-    results['B0744_7'], results['SB820_2'], results['S880300'] = extract_block_0744(2073, 132)
+BB0583_1 = 280
+block0583_1 = (binascii.hexlify(data[BB0583_1:(BB0583_1 + 2)])).upper()
+subkey9A1020 = (binascii.hexlify(data[(BB0583_1 + 2):(BB0583_1 + 5)])).upper()
+subkey8A0100 = (binascii.hexlify(data[(BB0583_1 + 5):((BB0583_1 + 5) + 132)])).upper()
+subkey8A0100a = textwrap.wrap(subkey8A0100, 132)
+H_KEY0 = subkey8A0100[:6]
+L_KEY0 = subkey8A0100[6:64]
+H_KEY1 = subkey8A0100[64:70]
+L_KEY1 = subkey8A0100[70:128]
+H_KEY2 = subkey8A0100[128:134]
+L_KEY2 = subkey8A0100[134:192]
+H_KEY3 = subkey8A0100[192:198]
+L_KEY3 = subkey8A0100[198:256]
+print block0583_1
+print subkey9A1020[:4], subkey9A1020[4:6], "-----BLOCK 9A/8A"
+print H_KEY0[:6], L_KEY0
+print H_KEY1[:6], L_KEY1
+print H_KEY2[:6], L_KEY2
+print H_KEY3[:6], L_KEY3, separator
+#print "NEXT counter = ", (BB0583_1 + 5) + 128
 
-    # LAST BLOCK
-    BB0904 = 2143
-    results['block0904'] = binascii.hexlify(data[BB0904:(BB0904 + 2)]).decode('ascii').upper()
-    results['subkey0304'] = binascii.hexlify(data[(BB0904 + 2):(BB0904 + 4)]).decode('ascii').upper()
-    results['subkey010400'] = binascii.hexlify(data[(BB0904 + 4):(BB0904 + 4 + 137)]).decode('ascii').upper()
+BB0583_2 = 413
+block0583_2 = (binascii.hexlify(data[BB0583_2:(BB0583_2 + 2)])).upper()
+subkey901020 = (binascii.hexlify(data[(BB0583_2 + 2):(BB0583_2 + 5)])).upper()
+subkeyD00100 = (binascii.hexlify(data[(BB0583_2 + 5):((BB0583_2 + 5) + 132)])).upper()
+subkeyD00100a = textwrap.wrap(subkeyD00100, 132)
+H_KEY0 = subkeyD00100[:6]
+L_KEY0 = subkeyD00100[6:64]
+H_KEY1 = subkeyD00100[64:70]
+L_KEY1 = subkeyD00100[70:128]
+H_KEY2 = subkeyD00100[128:134]
+L_KEY2 = subkeyD00100[134:192]
+H_KEY3 = subkeyD00100[192:198]
+L_KEY3 = subkeyD00100[198:256]
+print block0583_2
+print subkey901020[:4], subkey901020[4:6], "-----BLOCK 90/D0"
+print H_KEY0[:6], L_KEY0
+print H_KEY1[:6], L_KEY1
+print H_KEY2[:6], L_KEY2
+print H_KEY3[:6], L_KEY3, separator
+#print "NEXT counter = ", (BB0583_2 + 5) + 128
 
-    return results
+BB0583_3 = 546
+block0583_3 = (binascii.hexlify(data[BB0583_3:(BB0583_3 + 2)])).upper()
+subkey991020 = (binascii.hexlify(data[(BB0583_3 + 2):(BB0583_3 + 5)])).upper()
+subkey990100 = (binascii.hexlify(data[(BB0583_3 + 5):((BB0583_3 + 5) + 132)])).upper()
+subkey990100a = textwrap.wrap(subkey990100, 132)
+H_KEY0 = subkey990100[:6]
+L_KEY0 = subkey990100[6:64]
+H_KEY1 = subkey990100[64:70]
+L_KEY1 = subkey990100[70:128]
+H_KEY2 = subkey990100[128:134]
+L_KEY2 = subkey990100[134:192]
+H_KEY3 = subkey990100[192:198]
+L_KEY3 = subkey990100[198:256]
+print block0583_3
+print subkey991020[:4], subkey991020[4:6], "-----BLOCK 99/99"
+print H_KEY0[:6], L_KEY0
+print H_KEY1[:6], L_KEY1
+print H_KEY2[:6], L_KEY2
+print H_KEY3[:6], L_KEY3, separator
+#print "NEXT counter = ", (BB0583_3 + 5) + 128
 
-def print_extracted_data(res):
-    """Prints the extracted data in the original format."""
-    print()
-    print('CSCKeyDescriptor: ', res['DESCRIPTOR'], "(LEN of CWPK block)")
-    print('NUID: ', res['NUID'])
-    print('Max Number of Provider IDs: ', res['NPROVIDER'])
-    print('Provider ID: ', res['PROVIDERID'], "; SysID ", int(res['PROVIDERID'], 16))
-    print('Security Architecture: ', res['ARCH'])
-    print('CW Key descriptor: ', res['CWKEYDESC'])
-    print('Hex bytes: ', res['Hextable'])
-    print('Storage table length: 0x%s'% res['TLENGHT'])
+BB0583_4 = 679
+block0583_4 = (binascii.hexlify(data[BB0583_4:(BB0583_4 + 2)])).upper()
+subkey981020 = (binascii.hexlify(data[(BB0583_4 + 2):(BB0583_4 + 5)])).upper()
+subkey880100 = (binascii.hexlify(data[(BB0583_4 + 5):((BB0583_4 + 5) + 132)])).upper()
+subkey880100a = textwrap.wrap(subkey880100, 132)
+H_KEY0 = subkey880100[:6]
+L_KEY0 = subkey880100[6:64]
+H_KEY1 = subkey880100[64:70]
+L_KEY1 = subkey880100[70:128]
+H_KEY2 = subkey880100[128:134]
+L_KEY2 = subkey880100[134:192]
+H_KEY3 = subkey880100[192:198]
+L_KEY3 = subkey880100[198:256]
+print block0583_4
+print subkey981020[:4], subkey981020[4:6], "-----BLOCK 98/88"
+print H_KEY0[:6], L_KEY0
+print H_KEY1[:6], L_KEY1
+print H_KEY2[:6], L_KEY2
+print H_KEY3[:6], L_KEY3, separator
+#print "NEXT counter = ", (BB0583_4 + 5) + 128
 
-    print()
-    for i in range(8):
-        print(f'eCK{i}:', res[f'eCK{i}'])
+BB0583_5 = 812
+block0583_5 = (binascii.hexlify(data[BB0583_5:(BB0583_5 + 2)])).upper()
+subkeyAA2020 = (binascii.hexlify(data[(BB0583_5 + 2):(BB0583_5 + 5)])).upper()
+subkey8A0200 = (binascii.hexlify(data[(BB0583_5 + 5):((BB0583_5 + 5) + 132)])).upper()
+subkey8A0200a = textwrap.wrap(subkey8A0200, 132)
+H_KEY0 = subkey8A0200[:6]
+L_KEY0 = subkey8A0200[6:64]
+H_KEY1 = subkey8A0200[64:70]
+L_KEY1 = subkey8A0200[70:128]
+H_KEY2 = subkey8A0200[128:134]
+L_KEY2 = subkey8A0200[134:192]
+H_KEY3 = subkey8A0200[192:198]
+L_KEY3 = subkey8A0200[198:256]
+print block0583_5
+print subkeyAA2020[:4], subkeyAA2020[4:6], "-----BLOCK AA/8A"
+print H_KEY0[:6], L_KEY0
+print H_KEY1[:6], L_KEY1
+print H_KEY2[:6], L_KEY2
+print H_KEY3[:6], L_KEY3, separator
+#print "NEXT counter = ", (BB0583_5 + 5) + 128
 
-    print()
-    print("|||||||||||||||||||||||||||||||||||||")
-    print("|| New datakeys protection level  || ")
-    print("|||||||||||||||||||||||||||||||||||||")
-    print()
+BB0583_6 = 945
+block0583_6 = (binascii.hexlify(data[BB0583_6:(BB0583_6 + 2)])).upper()
+subkeyA02020 = (binascii.hexlify(data[(BB0583_6 + 2):(BB0583_6 + 5)])).upper()
+subkeyD00200 = (binascii.hexlify(data[(BB0583_6 + 5):((BB0583_6 + 5) + 132)])).upper()
+subkeyD00200a = textwrap.wrap(subkeyD00200, 132)
+H_KEY0 = subkeyD00200[:6]
+L_KEY0 = subkeyD00200[6:64]
+H_KEY1 = subkeyD00200[64:70]
+L_KEY1 = subkeyD00200[70:128]
+H_KEY2 = subkeyD00200[128:134]
+L_KEY2 = subkeyD00200[134:192]
+H_KEY3 = subkeyD00200[192:198]
+L_KEY3 = subkeyD00200[198:256]
+print block0583_6
+print subkeyA02020[:4], subkeyA02020[4:6], "----BLOCK A0/D0"
+print H_KEY0[:6], L_KEY0
+print H_KEY1[:6], L_KEY1
+print H_KEY2[:6], L_KEY2
+print H_KEY3[:6], L_KEY3, separator
+#print "NEXT counter = ", (BB0583_6 + 5) + 128
 
-    separator = "\n"
+BBBB0583_7 = 1078
+blockBB0583_7 = (binascii.hexlify(data[BBBB0583_7:(BBBB0583_7 + 2)])).upper()
+subkeyA92020 = (binascii.hexlify(data[(BBBB0583_7 + 2):(BBBB0583_7 + 5)])).upper()
+subkey990200 = (binascii.hexlify(data[(BBBB0583_7 + 5):((BBBB0583_7 + 5) + 132)])).upper()
+subkey990200a = textwrap.wrap(subkey990200, 132)
+H_KEY0 = subkey990200[:6]
+L_KEY0 = subkey990200[6:64]
+H_KEY1 = subkey990200[64:70]
+L_KEY1 = subkey990200[70:128]
+H_KEY2 = subkey990200[128:134]
+L_KEY2 = subkey990200[134:192]
+H_KEY3 = subkey990200[192:198]
+L_KEY3 = subkey990200[198:256]
+print blockBB0583_7
+print subkeyA92020[:4], subkeyA92020[4:6], "-----BLOCK A9/99"
+print H_KEY0[:6], L_KEY0
+print H_KEY1[:6], L_KEY1
+print H_KEY2[:6], L_KEY2
+print H_KEY3[:6], L_KEY3, separator
+#print "NEXT counter = ", (BBBB0583_7 + 5) + 128
 
-    print(res['block0583'])
-    print(res['subkey8A0010'][:4], res['subkey8A0010'][4:6], "-----BLOCK 8A -1024-???? ")
-    print(separator.join(textwrap.wrap(res['subkey8A_256'], 32)), separator)
+BBBB0583_8 = 1211
+blockBB0583_8 = (binascii.hexlify(data[BBBB0583_8:(BBBB0583_8 + 2)])).upper()
+subkeyA82020 = (binascii.hexlify(data[(BBBB0583_8 + 2):(BBBB0583_8 + 5)])).upper()
+subkey880200 = (binascii.hexlify(data[(BBBB0583_8 + 5):((BBBB0583_8 + 5) + 132)])).upper()
+subkey880200a = textwrap.wrap(subkey880200, 132)
+H_KEY0 = subkey880200[:6]
+L_KEY0 = subkey880200[6:64]
+H_KEY1 = subkey880200[64:70]
+L_KEY1 = subkey880200[70:128]
+H_KEY2 = subkey880200[128:134]
+L_KEY2 = subkey880200[134:192]
+H_KEY3 = subkey880200[192:198]
+L_KEY3 = subkey880200[198:256]
+print blockBB0583_8
+print subkeyA82020[:4], subkeyA82020[4:6], "-----BLOCK A8/88"
+print H_KEY0[:6], L_KEY0
+print H_KEY1[:6], L_KEY1
+print H_KEY2[:6], L_KEY2
+print H_KEY3[:6], L_KEY3, separator
+#print "NEXT counter = ", (BBBB0583_8 + 5) + 128
 
-    def print_block_9A_8A(block_name, subkey9A, subkey8A, label):
-        print(block_name)
-        print(subkey9A[:4], subkey9A[4:6], f"-----BLOCK {label}")
-        print(subkey8A[:6], subkey8A[6:64])
-        print(subkey8A[64:70], subkey8A[70:128])
-        print(subkey8A[128:134], subkey8A[134:192])
-        print(subkey8A[192:198], subkey8A[198:256], separator)
+BB0323 = 1344
+block0323 = (binascii.hexlify(data[BB0323:(BB0323 + 2)])).upper()
+subkey010E10 = (binascii.hexlify(data[(BB0323 + 2):(BB0323 + 5)])).upper()
+subkey010E = (binascii.hexlify(data[(BB0323 + 5):((BB0323 + 5) + 32)])).upper()
+H_KEY0 = subkey010E[:32]
+H_KEY1 = subkey010E[32:64]
+print block0323
+print subkey010E10[:4], subkey010E10[4:6], "------BLOCK 01"
+print tab, H_KEY0
+print tab, H_KEY1, separator
+#print "NEXT counter = ", (BB0323 + 5) + 32
 
-    print_block_9A_8A(res['B0583_1'], res['S9A1020'], res['S8A0100_1'], "9A/8A")
-    print_block_9A_8A(res['B0583_2'], res['S901020'], res['SD00100_1'], "90/D0")
-    print_block_9A_8A(res['B0583_3'], res['S991020'], res['S990100_1'], "99/99")
-    print_block_9A_8A(res['B0583_4'], res['S981020'], res['S880100_1'], "98/88")
-    print_block_9A_8A(res['B0583_5'], res['SAA2020'], res['S8A0200_1'], "AA/8A")
-    print_block_9A_8A(res['B0583_6'], res['SA02020'], res['SD0200_1'], "A0/D0")
-    print_block_9A_8A(res['BB0583_7'], res['SA92020'], res['S990200_1'], "A9/99")
-    print_block_9A_8A(res['BB0583_8'], res['SA82020'], res['S880200_1'], "A8/88")
+BB0622 = 1381
+block0622 = (binascii.hexlify(data[BB0622:(BB0622 + 2)])).upper()
+subkey811000 = (binascii.hexlify(data[(BB0622 + 2):(BB0622 + 4)])).upper()
+subkey8110 = (binascii.hexlify(data[(BB0622 + 4):((BB0622 + 4) + 32)])).upper()
+H_KEY0 = subkey8110[:32]
+H_KEY1 = subkey8110[32:64]
+print block0622
+print subkey811000, "   -----BLOCK 81"
+print tab, H_KEY0
+print tab, H_KEY1, separator
+#print "NEXT counter = ", (BB0622 + 5) + 31
 
-    # BLOCK 01
-    print(res['block0323'])
-    print(res['subkey010E10'][:4], res['subkey010E10'][4:6], "------BLOCK 01")
-    print("    ", res['subkey010E'][:32])
-    print("    ", res['subkey010E'][32:64], separator)
+BB0436 = 1417
+block0436 = (binascii.hexlify(data[BB0436:(BB0436 + 2)])).upper()
+subkey000010 = (binascii.hexlify(data[(BB0436 + 2):(BB0436 + 5)])).upper()
+subkeyXX0000 = (binascii.hexlify(data[(BB0436 + 5):((BB0436 + 5) + 51)])).upper()
+H_KEY0 = subkeyXX0000[:2]
+L_KEY0 = subkeyXX0000[2:34]
+H_KEY1 = subkeyXX0000[34:36]
+L_KEY1 = subkeyXX0000[36:68]
+H_KEY2 = subkeyXX0000[68:70]
+L_KEY2 = subkeyXX0000[70:]
+print block0436
+print subkey000010[:4], subkey000010[4:6], "-----BLOCK 00"
+print H_KEY0[:2], H_KEY0[2:], L_KEY0
+print H_KEY1[:2], H_KEY1[2:], L_KEY1
+print H_KEY2[:2], H_KEY2[2:], L_KEY2, separator
+#print "NEXT counter = ", (BB0436 + 6) + 50
 
-    # BLOCK 81
-    print(res['block0622'])
-    print(res['subkey811000'], "   -----BLOCK 81")
-    print("    ", res['subkey8110'][:32])
-    print("    ", res['subkey8110'][32:64], separator)
+BB0746 = 1473
+block0746 = (binascii.hexlify(data[BB0746:(BB0746 + 2)])).upper()
+subkey8A10 = (binascii.hexlify(data[(BB0746 + 2):(BB0746 + 4)])).upper()
+subkeyXX8A10 = (binascii.hexlify(data[(BB0746 + 4):((BB0746 + 4) + 68)])).upper()
+subkeyXX8A10a = textwrap.wrap(subkeyXX8A10, 16)
+H_KEY0 = subkeyXX8A10[:2]
+L_KEY0 = subkeyXX8A10[2:34]
+H_KEY1 = subkeyXX8A10[34:36]
+L_KEY1 = subkeyXX8A10[36:68]
+H_KEY2 = subkeyXX8A10[68:70]
+L_KEY2 = subkeyXX8A10[70:102]
+H_KEY3 = subkeyXX8A10[102:104]
+L_KEY3 = subkeyXX8A10[104:]
+print block0746
+print subkey8A10, "-----BLOCK 8A"
+print H_KEY0[:2], H_KEY0[2:], L_KEY0
+print H_KEY1[:2], H_KEY1[2:], L_KEY1
+print H_KEY2[:2], H_KEY2[2:], L_KEY2
+print H_KEY3[:2], H_KEY3[2:], L_KEY3, separator
+#print "NEXT counter = ", (BB0746 + 6) + 66
 
-    # BLOCK 00
-    print(res['block0436'])
-    print(res['subkey000010'][:4], res['subkey000010'][4:6], "-----BLOCK 00")
-    skXX00 = res['subkeyXX0000']
-    print(skXX00[:2], "", skXX00[2:34])
-    print(skXX00[34:36], "", skXX00[36:68])
-    print(skXX00[68:70], "", skXX00[70:], separator)
+BB0724 = 1545
+block0724 = (binascii.hexlify(data[BB0724:(BB0724 + 2)])).upper()
+subkey8010 = (binascii.hexlify(data[(BB0724 + 2):(BB0724 + 4)])).upper()
+subkeyXX8010 = (binascii.hexlify(data[(BB0724 + 4):((BB0724 + 4) + 68)])).upper()
+H_KEY0 = subkeyXX8010[:2]
+L_KEY0 = subkeyXX8010[2:34]
+H_KEY1 = subkeyXX8010[34:36]
+L_KEY1 = subkeyXX8010[36:68]
+print block0724
+print subkey8010, "-----BLOCK 8A"
+print H_KEY0[:2], H_KEY0[2:], L_KEY0
+print H_KEY1[:2], H_KEY1[2:], L_KEY1, separator
+#print "NEXT counter = ", (BB0724 + 6) + 32
 
-    # BLOCK 8A
-    print(res['block0746'])
-    print(res['subkey8A10_1'], "-----BLOCK 8A")
-    sk8A = res['subkeyXX8A10']
-    print(sk8A[:2], "", sk8A[2:34])
-    print(sk8A[34:36], "", sk8A[36:68])
-    print(sk8A[68:70], "", sk8A[70:102])
-    print(sk8A[102:104], "", sk8A[104:], separator)
+BB0744_0 = 1583
+block0744_0 = (binascii.hexlify(data[BB0744_0:(BB0744_0 + 2)])).upper()
+subkey9A20 = (binascii.hexlify(data[(BB0744_0 + 2):(BB0744_0 + 4)])).upper()
+subkey8A0100 = (binascii.hexlify(data[(BB0744_0 + 4):((BB0744_0 + 4) + 132)])).upper()
+H_KEY0 = subkey8A0100[:8]
+L_KEY0 = subkey8A0100[8:66]
+H_KEY1 = subkey8A0100[66:74]
+L_KEY1 = subkey8A0100[74:132]
+print block0744_0
+print subkey9A20[:4], "-----BLOCK 9A/8A "
+print H_KEY0[:2], H_KEY0[2:], L_KEY0
+print H_KEY1[:2], H_KEY1[2:], L_KEY1, separator
+#print "NEXT counter = ", (BB0744_0 + 6) + 64
 
-    # BLOCK 8A (again? BB0724)
-    print(res['block0724'])
-    print(res['subkey8010'], "-----BLOCK 8A")
-    sk80 = res['subkeyXX8010']
-    print(sk80[:2], "", sk80[2:34])
-    print(sk80[34:36], "", sk80[36:68], separator)
+BB0744_1 = 1653
+block0744_1 = (binascii.hexlify(data[BB0744_1:(BB0744_1 + 2)])).upper()
+subkey9020 = (binascii.hexlify(data[(BB0744_1 + 2):(BB0744_1 + 4)])).upper()
+subkeyD00100 = (binascii.hexlify(data[(BB0744_1 + 4):((BB0744_1 + 4) + 68)])).upper()
+H_KEY0 = subkeyD00100[:8]
+L_KEY0 = subkeyD00100[8:66]
+H_KEY1 = subkeyD00100[66:74]
+L_KEY1 = subkeyD00100[74:132]
+print block0744_1
+print subkey9020[:4], "-----BLOCK 90/D0"
+print H_KEY0[:2], H_KEY0[2:], L_KEY0
+print H_KEY1[:2], H_KEY1[2:], L_KEY1, separator
+#print "NEXT counter = ", (BB0744_1 + 6) + 64
 
-    def print_block_0744(block_name, subkey_header, subkey_data, label):
-        print(block_name)
-        print(subkey_header[:4], f"-----BLOCK {label} ")
-        print(subkey_data[:2], subkey_data[2:8], subkey_data[8:66])
-        print(subkey_data[66:68], subkey_data[68:74], subkey_data[74:132], separator)
+BB0744_2 = 1723
+block0744_2 = (binascii.hexlify(data[BB0744_2:(BB0744_2 + 2)])).upper()
+subkey9920 = (binascii.hexlify(data[(BB0744_2 + 2):(BB0744_2 + 4)])).upper()
+subkey990100 = (binascii.hexlify(data[(BB0744_2 + 4):((BB0744_2 + 4) + 68)])).upper()
+H_KEY0 = subkey990100[:8]
+L_KEY0 = subkey990100[8:66]
+H_KEY1 = subkey990100[66:74]
+L_KEY1 = subkey990100[74:132]
+print block0744_2
+print subkey9920[:4], "-----BLOCK 99/99"
+print H_KEY0[:2], H_KEY0[2:], L_KEY0
+print H_KEY1[:2], H_KEY1[2:], L_KEY1, separator
+#print "NEXT counter = ", (BB0744_2 + 6) + 64
 
-    print_block_0744(res['B0744_0'], res['S9A20'], res['S8A0100_2'], "9A/8A")
-    print_block_0744(res['B0744_1'], res['S9020'], res['SD00100_2'], "90/D0")
-    print_block_0744(res['B0744_2'], res['S9920'], res['S990100_2'], "99/99")
-    print_block_0744(res['B0744_3'], res['S9820'], res['S8801300'], "98/88")
-    print_block_0744(res['B0744_4'], res['SBA20'], res['S8A0300'], "BA/8A")
-    print_block_0744(res['B0744_5'], res['SB920'], res['S9903300'], "B0/D0")
-    print_block_0744(res['B0744_6'], res['SB820_1'], res['S980300'], "B9/99")
-    print_block_0744(res['B0744_7'], res['SB820_2'], res['S880300'], "B8/88")
+BB0744_3 = 1793
+block0744_3 = (binascii.hexlify(data[BB0744_3:(BB0744_3 + 2)])).upper()
+subkey9820 = (binascii.hexlify(data[(BB0744_3 + 2):(BB0744_3 + 4)])).upper()
+subkey8801300 = (binascii.hexlify(data[(BB0744_3 + 4):((BB0744_3 + 4) + 68)])).upper()
+H_KEY0 = subkey8801300[:8]
+L_KEY0 = subkey8801300[8:66]
+H_KEY1 = subkey8801300[66:74]
+L_KEY1 = subkey8801300[74:132]
+print block0744_3
+print subkey9820[:4], "-----BLOCK 98/88"
+print H_KEY0[:2], H_KEY0[2:], L_KEY0
+print H_KEY1[:2], H_KEY1[2:], L_KEY1, separator
+#print "NEXT counter = ", (BB0744_3 + 6) + 64
 
-    # LAST BLOCK
-    print(res['block0904'])
-    print(res['subkey0304'][:4], "-----LAST BLOCK")
-    sk0104 = res['subkey010400']
-    h0 = sk0104[:8]
-    l0 = sk0104[8:76]
-    h1 = sk0104[76:144]
-    l1 = sk0104[144:]
-    print(h0[:4], h0[4:], l0[:6], l0[6:10], l0[10:12], l0[12:20], l0[20:], end=" ")
-    print(h1[:2], h1[2:], l1, separator)
+BB0744_4 = 1863
+block0744_4 = (binascii.hexlify(data[BB0744_4:(BB0744_4 + 2)])).upper()
+subkeyBA20 = (binascii.hexlify(data[(BB0744_4 + 2):(BB0744_4 + 4)])).upper()
+subkey8A0300 = (binascii.hexlify(data[(BB0744_4 + 4):((BB0744_4 + 4) + 132)])).upper()
+subkey8A0300a = textwrap.wrap(subkey8A0300, 132)
+H_KEY0 = subkey8A0300[:8]
+L_KEY0 = subkey8A0300[8:66]
+H_KEY1 = subkey8A0300[66:74]
+L_KEY1 = subkey8A0300[74:132]
+# H_KEY2 = subkey8A0300[132:140]
+# L_KEY2 = subkey8A0300[140:198]
+# H_KEY3 = subkey8A0300[198:206]
+# L_KEY3 = subkey8A0300[206:]
+print block0744_4
+print subkeyBA20[:4], "-----BLOCK BA/8A"
+print H_KEY0[:2], H_KEY0[2:], L_KEY0
+print H_KEY1[:2], H_KEY1[2:], L_KEY1, separator
+# print H_KEY2[:2], H_KEY2[2:], L_KEY2
+# print H_KEY3[:2], H_KEY3[2:], L_KEY3
+#print "NEXT counter = ", (BB0744_4 + 6) + 64
 
-def main():
-    try:
-        path_input = input("Input DIRECTORY here: ")
-    except (EOFError, KeyboardInterrupt):
-        return
+BB0744_5 = 1933
+block0744_5 = (binascii.hexlify(data[BB0744_5:(BB0744_5 + 2)])).upper()
+subkeyB920 = (binascii.hexlify(data[(BB0744_5 + 2):(BB0744_5 + 4)])).upper()
+subkey9903300 = (binascii.hexlify(data[(BB0744_5 + 4):((BB0744_5 + 4) + 132)])).upper()
+subkey9903300a = textwrap.wrap(subkey9903300, 132)
+H_KEY0 = subkey9903300[:8]
+L_KEY0 = subkey9903300[8:66]
+H_KEY1 = subkey9903300[66:74]
+L_KEY1 = subkey9903300[74:132]
+# H_KEY2 = subkey9903300[132:140]
+# L_KEY2 = subkey9903300[140:198]
+# H_KEY3 = subkey9903300[198:206]
+# L_KEY3 = subkey9903300[206:]
+print block0744_5
+print subkeyB920[:4], "-----BLOCK B0/D0"
+print H_KEY0[:2], H_KEY0[2:], L_KEY0
+print H_KEY1[:2], H_KEY1[2:], L_KEY1, separator
+# print H_KEY2[:2], H_KEY2[2:], L_KEY2
+# print H_KEY3[:2], H_KEY3[2:], L_KEY3
+#print "NEXT counter = ", (BB0744_5 + 6) + 64
 
-    # define how date time will be presented
-    date = time.strftime("%d.%m.%Y-%H.%M")
-    print(date)
+BB0744_6 = 2003
+block0744_6 = (binascii.hexlify(data[BB0744_6:(BB0744_6 + 2)])).upper()
+subkeyB820 = (binascii.hexlify(data[(BB0744_6 + 2):(BB0744_6 + 4)])).upper()
+subkey980300 = (binascii.hexlify(data[(BB0744_6 + 4):((BB0744_6 + 4) + 132)])).upper()
+subkey980300a = textwrap.wrap(subkey980300, 132)
+H_KEY0 = subkey980300[:8]
+L_KEY0 = subkey980300[8:66]
+H_KEY1 = subkey980300[66:74]
+L_KEY1 = subkey980300[74:132]
+# H_KEY2 = subkey980300[132:140]
+# L_KEY2 = subkey980300[140:198]
+# H_KEY3 = subkey980300[198:206]
+# L_KEY3 = subkey980300[206:]
+print block0744_6
+print subkeyB820[:4], "-----BLOCK B9/99"
+print H_KEY0[:2], H_KEY0[2:], L_KEY0
+print H_KEY1[:2], H_KEY1[2:], L_KEY1, separator
+# print H_KEY2[:2], H_KEY2[2:], L_KEY2
+# print H_KEY3[:2], H_KEY3[2:], L_KEY3
+#print "NEXT counter = ", (BB0744_6 + 6) + 64
 
-    mypath = os.path.join(os.path.expanduser(path_input + "/"))
-    print("\nPath to files:\n", mypath)
+BB0744_7 = 2073
+block0744_7 = (binascii.hexlify(data[BB0744_7:(BB0744_7 + 2)])).upper()
+subkeyB820 = (binascii.hexlify(data[(BB0744_7 + 2):(BB0744_7 + 4)])).upper()
+subkey880300 = (binascii.hexlify(data[(BB0744_7 + 4):((BB0744_7 + 4) + 132)])).upper()
+subkey880300a = textwrap.wrap(subkey880300, 132)
+H_KEY0 = subkey880300[:8]
+L_KEY0 = subkey880300[8:66]
+H_KEY1 = subkey880300[66:74]
+L_KEY1 = subkey880300[74:132]
+# H_KEY2 = subkey880300[132:140]
+# L_KEY2 = subkey880300[140:198]
+# H_KEY3 = subkey880300[198:206]
+# L_KEY3 = subkey880300[206:]
+print block0744_7
+print subkeyB820[:4], "-----BLOCK B8/88"
+print H_KEY0[:2], H_KEY0[2:], L_KEY0
+print H_KEY1[:2], H_KEY1[2:], L_KEY1, separator
+# print H_KEY2[:2], H_KEY2[2:], L_KEY2
+# print H_KEY3[:2], H_KEY3[2:], L_KEY3
+#print "NEXT counter = ", (BB0744_7 + 6) + 64
 
-    # print the dir content
-    f_list = []
-    try:
-        for (dirpath, dirnames, filenames) in os.walk(mypath):
-            f_list.extend(filenames)
-            for f_name in f_list:
-                print(f_name)
-            break
-    except Exception as e:
-        print(f"Error walking directory: {e}")
-        return
+BB0904 = 2143
+block0904 = (binascii.hexlify(data[BB0904:(BB0904 + 2)])).upper()
+subkey0304 = (binascii.hexlify(data[(BB0904 + 2):(BB0904 + 4)])).upper()
+subkey010400 = (binascii.hexlify(data[(BB0904 + 4):((BB0904 + 4) + 137)])).upper()
+subkey010400a = textwrap.wrap(subkey010400, 137)
+H_KEY0 = subkey010400[:8]
+L_KEY0 = subkey010400[8:76]
+H_KEY1 = subkey010400[76:144]
+L_KEY1 = subkey010400[144:]
+# H_KEY2 = subkey010400[132:140]
+# L_KEY2 = subkey010400[140:198]
+# H_KEY3 = subkey010400[198:206]
+# L_KEY3 = subkey010400[206:]
+print block0904
+print subkey0304[:4], "-----LAST BLOCK"
+print H_KEY0[:4], H_KEY0[4:], L_KEY0[:6], L_KEY0[6:10], L_KEY0[10:12], L_KEY0[12:20], L_KEY0[20:],
+print H_KEY1[:2], H_KEY1[2:], L_KEY1, separator
+# print H_KEY2[:2], H_KEY2[2:], L_KEY2
+# print H_KEY3[:2], H_KEY3[2:], L_KEY3
+#print "NEXT counter = ", (BB0904 + 6) + 64
 
-    if not f_list:
-        print("No files found in directory.")
-        return
-
-    try:
-        filename0 = input('\nInput binary(XXX.bin) file from the list above: ')
-    except (EOFError, KeyboardInterrupt):
-        return
-
-    filename = os.path.join(mypath, filename0)
-
-    try:
-        with open(filename, 'rb') as f:
-            data = f.read()
-    except Exception as e:
-        print(f"Error reading file: {filename} ({e})")
-        sys.exit(2)
-
-    res = extract_all_data(data)
-    print_extracted_data(res)
-
-if __name__ == "__main__":
-    main()
+# print file to output.txt file
+# f = f.open('BLOCK_0AE3.txt', 'a')
+# print >> f.write('...\n')
