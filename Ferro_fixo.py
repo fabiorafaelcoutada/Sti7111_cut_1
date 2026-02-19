@@ -526,18 +526,9 @@ COMMAND_BLOCKS = [
     ]),
 ]
 
-def run_exploit(serial_port):
-    for delay, commands in COMMAND_BLOCKS:
-        time.sleep(delay)
-        for cmd in commands:
-            serial_port.write(cmd)
+s = serial.Serial("/dev/ttyUSB1", 115200, write_timeout=0.5)
 
-def main():
-    try:
-        s = serial.Serial("/dev/ttyUSB1", 115200, write_timeout=0.5)
-        run_exploit(s)
-    except serial.SerialException as e:
-        print(f"Error opening serial port: {e}")
-
-if __name__ == "__main__":
-    main()
+for delay, commands in COMMAND_BLOCKS:
+    time.sleep(delay)
+    for cmd in commands:
+        s.write(cmd)
