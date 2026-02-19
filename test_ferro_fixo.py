@@ -1,12 +1,12 @@
 import unittest
-from unittest.mock import MagicMock, call, patch
+from unittest.mock import Mock, call, patch
 import Ferro_fixo
 
 class TestFerroFixo(unittest.TestCase):
-    @patch('Ferro_fixo.time.sleep')
-    def test_send_pokes_sequence(self, mock_sleep):
-        mock_serial = MagicMock()
-        Ferro_fixo.send_pokes(mock_serial)
+    @patch('time.sleep')
+    def test_run_exploit_writes_correct_sequence(self, mock_sleep):
+        mock_serial = Mock()
+        Ferro_fixo.run_exploit(mock_serial)
 
         expected_calls = [
             call(b"poke fe24e678 00D05B15\n"),
@@ -381,9 +381,5 @@ class TestFerroFixo(unittest.TestCase):
             call(b"poke FE24DE1C 01000000\n"),
             call(b"display FE24C130\n"),
         ]
-
-        mock_serial.write.assert_has_calls(expected_calls)
+        mock_serial.write.assert_has_calls(expected_calls, any_order=False)
         self.assertEqual(mock_serial.write.call_count, len(expected_calls))
-
-if __name__ == '__main__':
-    unittest.main()

@@ -1,4 +1,4 @@
-#!/usr/bin/env python3
+#!/usr/bin/env python2
 ####################################################
 #                                                  #
 #            Nagra 3  Extrator de dados            #
@@ -16,7 +16,7 @@ from os import walk
 #from os import listdir
 import time
 
-PATH = binascii.hexlify(raw_input("Input DIRECTORY here: ")).decode('hex')
+PATH = raw_input("Input DIRECTORY here: ")
 
 # define how date time will be presented
 date = time.strftime("%d.%m.%Y-%H.%M")
@@ -30,12 +30,12 @@ mypath = path
 f = []
 for (dirpath, dirnames, filenames) in walk(mypath):
 	f.extend(filenames)
-	f = "\n".join(f[:])
+	f = "\n".join(f)
 	print f
 	break
 
 print "\nPath to files:\n", path
-filename0 = str(raw_input('\nInput binary(XXX.bin) file from the list above: ')).encode('hex').decode('hex')
+filename0 = str(raw_input('\nInput binary(XXX.bin) file from the list above: '))
 filename = path + filename0
 with open(filename, 'rb') as f:
 	content = f.read()
@@ -47,7 +47,7 @@ try:
 	with open(filename, 'rb') as f:
 		f.seek(0x0, 0)  # 0E0000 if you use extracted block as .bin file change address to 0x0
 		data = f.read()
-except:
+except Exception:
 	print "Error reading file:", filename
 	sys.exit(2)
 
