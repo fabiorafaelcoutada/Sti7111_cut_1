@@ -1,4 +1,4 @@
-#!/usr/bin/env python3
+#!/usr/bin/env python2
 ####################################################
 #                                                  #
 #            Nagra 3  Extrator de dados            #
