@@ -47,7 +47,7 @@ try:
 	with open(filename, 'rb') as f:
 		f.seek(0x0, 0)  # 0E0000 if you use extracted block as .bin file change address to 0x0
 		data = f.read()
-except:
+except IOError:
 	print "Error reading file:", filename
 	sys.exit(2)
 
