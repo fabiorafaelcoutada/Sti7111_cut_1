@@ -30,7 +30,7 @@ mypath = path
 f = []
 for (dirpath, dirnames, filenames) in walk(mypath):
 	f.extend(filenames)
-	f = "\n".join(f[:])
+	f = "\n".join(f)
 	print f
 	break
 
