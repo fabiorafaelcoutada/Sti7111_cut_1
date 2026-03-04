@@ -1,11 +1,19 @@
 import unittest
 from unittest.mock import Mock, call, patch
+import sys
+import time
+
+# Mock serial before importing Ferro_fixo
+sys.modules['serial'] = Mock()
+
 import Ferro_fixo
 
 class TestFerroFixo(unittest.TestCase):
     @patch('time.sleep')
     def test_run_exploit_writes_correct_sequence(self, mock_sleep):
         mock_serial = Mock()
+        mock_serial.in_waiting = 0
+
         Ferro_fixo.run_exploit(mock_serial)
 
         expected_calls = [
@@ -382,4 +390,29 @@ class TestFerroFixo(unittest.TestCase):
             call(b"display FE24C130\n"),
         ]
         mock_serial.write.assert_has_calls(expected_calls, any_order=False)
-        self.assertEqual(mock_serial.write.call_count, len(expected_calls))
+        self.assertEqual(mock_serial.write.call_count, 371)
+
+    @patch('time.sleep')
+    def test_run_exploit_with_prompt(self, mock_sleep):
+        mock_serial = Mock()
+        # Simulate prompt appearance
+        mock_serial.in_waiting = 1
+        mock_serial.read.side_effect = [b'>'] * 1000
+
+        # Ferro_fixo.wait_for_prompt uses time.time() for timeout
+        with patch('time.time', side_effect=[0] * 10000):
+            Ferro_fixo.run_exploit(mock_serial, prompt=b'>')
+
+        self.assertEqual(mock_serial.write.call_count, 371)
+        self.assertGreaterEqual(mock_serial.read.call_count, 371)
+
+    @patch('time.sleep')
+    @patch('time.time')
+    def test_wait_for_prompt_timeout(self, mock_time, mock_sleep):
+        mock_serial = Mock()
+        mock_serial.in_waiting = 0
+        # Start at 0, then move to 6.0 (past 5.0 default timeout)
+        mock_time.side_effect = [0, 1.0, 2.0, 3.0, 4.0, 5.0, 6.0]
+
+        result = Ferro_fixo.wait_for_prompt(mock_serial, b'>')
+        self.assertFalse(result)
