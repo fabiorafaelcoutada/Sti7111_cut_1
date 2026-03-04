@@ -6,14 +6,10 @@
 #                por The onsitbin                  #
 #                                                  #
 ####################################################
+# Python 3 compatibility wrapper for legacy script
 
 import sys
-import binascii
-import textwrap
 import os
-from os import path
-from os import walk
-#from os import listdir
 import time
 
 try:

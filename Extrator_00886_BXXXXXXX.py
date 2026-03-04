@@ -1,11 +1,7 @@
-#!/usr/bin/env python2
-####################################################
-#                                                  #
-#            Nagra 3  Extrator de dados            #
-#            Data: 08 de Junho de 2023             #
-#                por The onsitbin                  #
-#                                                  #
-####################################################
+#!/usr/bin/env python3
+# Compatibility wrapper for legacy Python 2 script
+from Extrator_Py3 import main
+from nagra_parser import extract_header, extract_nagra3_data # Keep for test compatibility
 
 import sys
 import binascii
