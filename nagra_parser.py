@@ -1,6 +1,18 @@
 #!/usr/bin/env python3
 import binascii
 import textwrap
+import os
+
+def is_safe_path(filepath, base_dir=None):
+    """
+    Prevents path traversal attacks by validating resolved absolute paths
+    against an allowed base directory.
+    """
+    if base_dir is None:
+        base_dir = os.getcwd()
+    base_dir = os.path.abspath(base_dir)
+    filepath = os.path.abspath(filepath)
+    return os.path.commonpath([base_dir, filepath]) == base_dir
 
 class Nagra3Parser:
     """
