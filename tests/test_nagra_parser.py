@@ -1,5 +1,5 @@
 import unittest
-from nagra_parser import Nagra3Parser
+from nagra_parser import Nagra3Parser, extract_nagra3_data
 import binascii
 
 class TestNagra3Parser(unittest.TestCase):
@@ -65,6 +65,75 @@ class TestNagra3Parser(unittest.TestCase):
         self.assertEqual(block['subkey_id'], '8A0010CC')
         # Data starts at 147 + 5 = 152
         self.assertTrue(block['data'].startswith('CCCC'))
+
+class TestCompatibility(unittest.TestCase):
+    def test_extract_nagra3_data(self):
+        # Create a payload of sufficient size (approx 2300 bytes)
+        payload = bytearray(2300)
+
+        # Helper to write hex string to payload at offset
+        def write_hex(offset, hex_str):
+            b = binascii.unhexlify(hex_str)
+            payload[offset:offset+len(b)] = b
+
+        # Set expected values
+        expected_descriptor = "CAFEBABE"
+        write_hex(0, expected_descriptor)
+
+        expected_nuid = "DEADBEEF"
+        write_hex(4, expected_nuid)
+
+        expected_eck0 = "00112233445566778899AABBCCDDEEFF"
+        write_hex(19, expected_eck0)
+
+        # Block G at 147
+        write_hex(147, "0583") # id
+        write_hex(149, "AABBCCDD") # subkey_id (shares 1 byte with data)
+        # subkey8A_256 (data) starts at 147 + 5 = 152
+        payload[152:280] = b'\xEE' * 128
+
+        expected_block0583 = "0583"
+        expected_subkey8A0010 = "AABBCCEE"
+        expected_subkey8A_256 = binascii.hexlify(payload[152:280]).decode('ascii').upper()
+
+        # Block A at 280
+        write_hex(280, "0583")
+        expected_subkey9A1020 = "123456"
+        write_hex(282, expected_subkey9A1020)
+
+        # Block I at 2143
+        expected_subkey0304 = "9988"
+        write_hex(2145, expected_subkey0304)
+
+        # Run extraction
+        data = extract_nagra3_data(bytes(payload))
+
+        # Assertions
+        self.assertEqual(data['DESCRIPTOR'], expected_descriptor)
+        self.assertEqual(data['NUID'], expected_nuid)
+        self.assertEqual(data['eCK0'], expected_eck0)
+
+        self.assertEqual(data['block0583'], expected_block0583)
+        self.assertEqual(data['subkey8A0010'], expected_subkey8A0010)
+        self.assertEqual(data['subkey8A_256'], expected_subkey8A_256)
+
+        self.assertEqual(data['subkey9A1020'], expected_subkey9A1020)
+        self.assertEqual(data['subkey0304'], expected_subkey0304)
+
+        # Verify a few others are present
+        self.assertEqual(data['eCK1'], "00" * 16)
+
+    def test_extract_nagra3_data_short_payload(self):
+        # Test with payload shorter than required
+        payload = bytearray(100) # Too short for most things
+
+        data = extract_nagra3_data(bytes(payload))
+
+        # 0:4 exists
+        self.assertEqual(data['DESCRIPTOR'], "00000000")
+
+        # 2143 is way out of bounds
+        self.assertEqual(data['subkey0304'], "")
 
 if __name__ == '__main__':
     unittest.main()
